@@ -47,21 +47,18 @@ def lambda_handler(event, context):
             
             print(f"Successfully reviewed draft. Byte count: {len(final_content.encode('utf-8'))}/{target_bytes}")
             
-            # Publish reviewed content to Redis Pub/Sub
-            pub_data = {
+            # Publish reviewed content to Redis Stream
+            message_data = {
                 'task_id': task_id,
                 'version': version,
                 'final_content': final_content,
-                
-    
             }
-            channel = os.environ.get('REDIS_CHANNEL', 'final_content_channel')
             
             try:
-                subscriber_count = redis_client.publish(channel, json.dumps(pub_data))
-                print(f"Successfully published to Redis channel {channel}. Subscribers: {subscriber_count}")
+                stream_id = redis_client.xadd('ai-response', {'data': json.dumps(message_data, ensure_ascii=False)})
+                print(f"Successfully added to Redis stream 'ai-response'. Stream ID: {stream_id}")
             except Exception as redis_error:
-                print(f"Error publishing to Redis channel: {str(redis_error)}")
+                print(f"Error adding to Redis stream: {str(redis_error)}")
             
         return {'statusCode': 200, 'body': json.dumps('Successfully processed all messages')}
         
