@@ -9,28 +9,7 @@ on:
       - 'edukit-AI-agent-2/**'
 
 jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      agent1-changed: ${{ steps.changes.outputs.agent1 }}
-      agent2-changed: ${{ steps.changes.outputs.agent2 }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            agent1:
-              - 'edukit-AI-agent-1/**'
-            agent2:
-              - 'edukit-AI-agent-2/**'
-
   deploy-agent-1:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.agent1-changed == 'true'
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -71,8 +50,6 @@ jobs:
           zip_file: ./edukit-AI-agent-1/deployment-package.zip
 
   deploy-agent-2:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.agent2-changed == 'true'
     runs-on: ubuntu-latest
     environment: prod
     steps:
