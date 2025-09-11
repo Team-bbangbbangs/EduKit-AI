@@ -1,6 +1,7 @@
 name: Deploy Lambda Functions - Dev
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
