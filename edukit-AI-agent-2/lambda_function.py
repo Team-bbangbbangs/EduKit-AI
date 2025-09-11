@@ -37,7 +37,18 @@ def lambda_handler(event, context):
 
             version = message_body['version']
             draft_content = message_body['draft_content']
-            
+
+            processed_message = {
+                'task_id': task_id,
+                'version': version,
+                "status": "PHASE3_STARTED"
+            }
+            try:
+                stream_id = redis_client.xadd('ai-response', {'data': json.dumps(processed_message, ensure_ascii=False)})
+                print(f"Successfully added to Redis stream 'ai-response'. Stream ID: {stream_id}")
+            except Exception as redis_error:
+                print(f"Error adding to Redis stream: {str(redis_error)}")
+
             # Review the draft content using OpenAI
             final_content = review_student_record(
                 draft_content=draft_content,
@@ -52,6 +63,7 @@ def lambda_handler(event, context):
                 'task_id': task_id,
                 'version': version,
                 'final_content': final_content,
+                "status": "COMPLETED"
             }
             
             try:
@@ -104,21 +116,23 @@ def review_student_record(draft_content: str, target_bytes: int, min_bytes: int)
 
 def create_review_prompt(draft_content: str, target_bytes: int, min_bytes: int) -> str:
     """학생 생활기록부 검토 프롬프트를 생성합니다."""
-    prompt = f"""다음은 학생 생활기록부 원고야. 아래 '스타일 가이드'에 맞춰 최종본을 완성해 줘.
+    prompt = f"""
+    다음은 학생 생활기록부 원고야. 아래 '스타일 가이드'에 맞춰 최종본을 완성해 줘.
 
-## 스타일 가이드
+    ## 스타일 가이드
 
-목표 분량: 각 버전은 UTF-8 인코딩 기준 {target_bytes}Byte (최소 {min_bytes}byte 이상)로 맞춰 줘.
-문체: 모든 문장은 '~함.' 또는 '~임.'으로 끝나는 현재형 음슴체로 변경하고, 문장 끝에 온점을 붙여 줘.
-구두점: 쉼표(,)는 사용하지 말고, 의미가 명확하도록 문장을 다듬어 줘.
-표현: '학생은', '학생이' 같은 표현은 사용하지 마.
+    목표 분량: 각 버전은 UTF-8 인코딩 기준 {target_bytes}Byte (최소 {min_bytes}byte 이상)로 맞춰 줘.
+    문체: 모든 문장은 '~함.' 또는 '~임.'으로 끝나는 현재형 음슴체로 변경하고, 문장 끝에 온점을 붙여 줘.
+    구두점: 쉼표(,)는 사용하지 말고, 의미가 명확하도록 문장을 다듬어 줘.
+    표현: '학생은', '학생이' 같은 표현은 사용하지 마.
 
-## 원고
+    ## 원고
 
-{draft_content}
+    {draft_content}
 
-## 최종본
+    ## 최종본
 
-위의 스타일 가이드를 정확히 따라 최종본을 작성해 줘. 설명이나 부연설명 없이 완성된 본문만 출력해."""
+    위의 스타일 가이드를 정확히 따라 최종본을 작성해 줘. 설명이나 부연설명 없이 완성된 본문만 출력해.
+    """
     
     return prompt

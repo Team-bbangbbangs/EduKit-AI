@@ -1,2 +1,3 @@
-openai==0.28.1
-boto3==1.34.34
+redis
+openai
+pydantic
