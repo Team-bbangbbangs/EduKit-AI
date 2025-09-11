@@ -1,9 +1,9 @@
-name: Deploy Lambda Functions - Dev
+name: Deploy Lambda Functions - Prod
 
 on:
   push:
     branches:
-      - develop
+      - main
     paths:
       - 'edukit-AI-agent-1/**'
       - 'edukit-AI-agent-2/**'
@@ -32,7 +32,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.agent1-changed == 'true'
     runs-on: ubuntu-latest
-    environment: dev
+    environment: prod
     steps:
       - uses: actions/checkout@v4
       
