@@ -29,14 +29,14 @@ def lambda_handler(event, context):
             message_body = json.loads(record['body'])
             
             # Extract draft generation event data
-            task_id = message_body['task_id']
-            request_prompt = message_body['request_prompt']
-            byte_count = message_body['byte_count']
+            task_id = message_body['taskId']
+            request_prompt = message_body['requestPrompt']
+            byte_count = message_body['byteCount']
             target_bytes = byte_count   
             min_bytes = byte_count - 100
 
             version = message_body['version']
-            draft_content = message_body['draft_content']
+            draft_content = message_body['draftContent']
 
             processed_message = {
                 'task_id': task_id,
