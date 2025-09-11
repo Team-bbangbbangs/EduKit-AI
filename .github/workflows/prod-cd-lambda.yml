@@ -74,7 +74,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.agent2-changed == 'true'
     runs-on: ubuntu-latest
-    environment: dev
+    environment: prod
     steps:
       - uses: actions/checkout@v4
       
