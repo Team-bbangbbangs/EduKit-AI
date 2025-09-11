@@ -1,0 +1,113 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'edukit-AI-agent-1/**'
+      - 'edukit-AI-agent-2/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      agent1-changed: ${{ steps.changes.outputs.agent1 }}
+      agent2-changed: ${{ steps.changes.outputs.agent2 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            agent1:
+              - 'edukit-AI-agent-1/**'
+            agent2:
+              - 'edukit-AI-agent-2/**'
+
+  deploy-agent-1:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.agent1-changed == 'true'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        working-directory: ./edukit-AI-agent-1
+        run: |
+          pip install \
+          --platform manylinux2014_x86_64 \
+          --target=./package \
+          --implementation cp \
+          --python-version 3.13 \
+          --only-binary=:all: \
+          --upgrade \
+          -r requirements.txt
+      
+      - name: Create deployment package
+        working-directory: ./edukit-AI-agent-1
+        run: |
+          cd package
+          zip -r ../deployment-package.zip .
+          cd ..
+          zip -g deployment-package.zip lambda_function.py
+      
+      - name: Deploy to AWS Lambda
+        uses: appleboy/lambda-action@v0.1.9
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          function_name: ${{ secrets.LAMBDA_FUNCTION_NAME_AGENT_1 }}
+          zip_file: ./edukit-AI-agent-1/deployment-package.zip
+
+  deploy-agent-2:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.agent2-changed == 'true'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        working-directory: ./edukit-AI-agent-2
+        run: |
+          pip install \
+          --platform manylinux2014_x86_64 \
+          --target=./package \
+          --implementation cp \
+          --python-version 3.13 \
+          --only-binary=:all: \
+          --upgrade \
+          -r requirements.txt
+      
+      - name: Create deployment package
+        working-directory: ./edukit-AI-agent-2
+        run: |
+          cd package
+          zip -r ../deployment-package.zip .
+          cd ..
+          zip -g deployment-package.zip lambda_function.py
+      
+      - name: Deploy to AWS Lambda
+        uses: appleboy/lambda-action@v0.1.9
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ${{ secrets.AWS_REGION }}
+          function_name: ${{ secrets.LAMBDA_FUNCTION_NAME_AGENT_2 }}
+          zip_file: ./edukit-AI-agent-2/deployment-package.zip
