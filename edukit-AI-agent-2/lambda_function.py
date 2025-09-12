@@ -126,7 +126,7 @@ def create_review_prompt(original_prompt: str, draft_content: str, min_bytes: in
 
     ## 스타일 가이드
 
-    목표 분량: 각 버전은 UTF-8 인코딩 기준 최대 {max_bytes}Byte (최소 {min_bytes}byte 이상)로 반드시 맞취야해.
+    목표 분량: 각 버전은 UTF-8 인코딩 기준 최소 {min_bytes}byte보다 길게 작성해줘. 또한 최대 {max_bytes}byte를 넘지 않도록 작성해줘. 해당 목표 분량을 반드시 지켜줘.
     문체: 모든 문장은 '~함.' 또는 '~임.'으로 끝나는 현재형 음슴체로 변경하고, 문장 끝에 온점을 붙여 줘.
     구두점: 쉼표(,)는 사용하지 말고, 의미가 명확하도록 문장을 다듬어 줘.
     표현: 
