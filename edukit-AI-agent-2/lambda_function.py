@@ -51,6 +51,7 @@ def lambda_handler(event, context):
 
             # Review the draft content using OpenAI
             final_content = review_student_record(
+                request_prompt=request_prompt,
                 draft_content=draft_content,
                 target_bytes=target_bytes,
                 min_bytes=min_bytes
@@ -78,18 +79,18 @@ def lambda_handler(event, context):
         print(f"Error processing messages: {str(e)}")
         return {'statusCode': 500, 'body': json.dumps(f'Error: {str(e)}')}
 
-def review_student_record(draft_content: str, target_bytes: int, min_bytes: int) -> str:
+def review_student_record(request_prompt: str, draft_content: str, target_bytes: int, min_bytes: int) -> str:
     """
     학생 생활기록부 초안을 스타일 가이드에 맞춰 최종 검토하는 함수
     """
     try:
-        prompt = create_review_prompt(draft_content, target_bytes, min_bytes)
+        prompt = create_review_prompt(request_prompt, draft_content, target_bytes, min_bytes)
         
         # OpenAI 라이브러리를 사용한 API 호출
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "당신은 학생 생활기록부 작성 전문가입니다. 주어진 스타일 가이드를 정확히 따라 원고를 완성해 주세요."},
+                {"role": "system", "content": "당신은 20년차 현직 교사 입니다. 주어진 스타일 가이드를 정확히 따라 원고를 완성해 주세요."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
@@ -114,14 +115,14 @@ def review_student_record(draft_content: str, target_bytes: int, min_bytes: int)
         print(f"An unexpected error occurred: {str(e)}")
         return draft_content
 
-def create_review_prompt(draft_content: str, target_bytes: int, min_bytes: int) -> str:
+def create_review_prompt(original_prompt: str, draft_content: str, target_bytes: int, min_bytes: int) -> str:
     """학생 생활기록부 검토 프롬프트를 생성합니다."""
     prompt = f"""
     다음은 학생 생활기록부 원고야. 아래 '스타일 가이드'에 맞춰 최종본을 완성해 줘.
 
     ## 스타일 가이드
 
-    목표 분량: 각 버전은 UTF-8 인코딩 기준 {target_bytes}Byte (최소 {min_bytes}byte 이상)로 맞춰 줘.
+    목표 분량: 각 버전은 UTF-8 인코딩 기준 {target_bytes}Byte (최소 {min_bytes}byte 이상)로 반드시 맞춰 줘. 맞출 때까지 계속 다듬어 줘.
     문체: 모든 문장은 '~함.' 또는 '~임.'으로 끝나는 현재형 음슴체로 변경하고, 문장 끝에 온점을 붙여 줘.
     구두점: 쉼표(,)는 사용하지 말고, 의미가 명확하도록 문장을 다듬어 줘.
     표현: '학생은', '학생이' 같은 표현은 사용하지 마.
@@ -133,6 +134,7 @@ def create_review_prompt(draft_content: str, target_bytes: int, min_bytes: int) 
     ## 최종본
 
     위의 스타일 가이드를 정확히 따라 원고를 다듬어서 최종본을 작성해 줘. 설명이나 부연설명 없이 완성된 본문만 출력해.
+    '{original_prompt}'의 내용에 존재하지 않는 정보는 절대 추가하지 마.
     
     """
     
