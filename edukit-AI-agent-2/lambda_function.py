@@ -132,7 +132,8 @@ def create_review_prompt(draft_content: str, target_bytes: int, min_bytes: int) 
 
     ## 최종본
 
-    위의 스타일 가이드를 정확히 따라 최종본을 작성해 줘. 설명이나 부연설명 없이 완성된 본문만 출력해.
+    위의 스타일 가이드를 정확히 따라 원고를 다듬어서 최종본을 작성해 줘. 설명이나 부연설명 없이 완성된 본문만 출력해.
+    
     """
     
     return prompt
