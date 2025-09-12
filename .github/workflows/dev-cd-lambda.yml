@@ -17,8 +17,6 @@ jobs:
       agent2-changed: ${{ steps.changes.outputs.agent2 }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
       
       - uses: dorny/paths-filter@v2
         id: changes
