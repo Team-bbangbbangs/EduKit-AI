@@ -52,7 +52,8 @@ def lambda_handler(event, context):
             # 규정 기반 프롬프트로 초안 개선 수행
             refined_content = refine_draft_content(
                 draft_content=draft_content,
-                original_prompt=request_prompt
+                original_prompt=request_prompt,
+                min_bytes=min_bytes
             )
 
             next_queue_url = os.environ.get('NEXT_QUEUE_URL')
@@ -75,13 +76,13 @@ def lambda_handler(event, context):
         print(f"Error processing messages: {str(e)}")
         return {'statusCode': 500, 'body': json.dumps(f'Error: {str(e)}')}
 
-def refine_draft_content(draft_content: str, original_prompt: str) -> str:
+def refine_draft_content(draft_content: str, original_prompt: str, min_bytes: int) -> str:
     """
     생활기록부 제약 조건을 확인하고 초안을 개선하는 함수 (규정 기반 프롬프트 복구)
     """
     try:
-        system_prompt = """
-            다음은 학생 생활기록부 초안이야. 아래 '작성 원칙'에 따라, 초안의 의미는 최대한 유지하되, 문장을 다듬어줘.
+        system_prompt = f"""
+            다음은 학생 생활기록부 초안이야. 아래 '작성 원칙'에 따라, 초안인 '{draft_content}'을 다듬어줘. 문장을 다듬되 UTF-8 인코딩 기준 최소 {min_bytes}byte 이상으로 최대한 작성해줘.
             ## 작성 원칙
             - 입력된 정보가 부정적이더라도, 직접적이거나 간접적으로라도 부정적인 표현을 작성하면 안됩니다. 대신 앞으로의 개선방향에 대해서 작성해주세요. '~할 계획임'과 같이 추측성 표현은 작성하지 마세요.
             - 입력된 정보를 바탕으로 생활기록부를 작성할 때, 아래 사항들은 절대 작성하지 마세요.
@@ -92,6 +93,7 @@ def refine_draft_content(draft_content: str, original_prompt: str) -> str:
                 - 구체적인 특정 대학명, 기관명은 입력할 수 없음 단, 교육관련기관(교육부 및 소속기관(대한민국학술원, 국사편찬위원회, 국립국제교육원, 국립특수교육원, 교원소청심사위원회, 중앙교육연수원), 시도교육청 및 직속기관, 교육지원청 및 소속기관에 한함)의 경우 기관명을 입력할 수 있음.
                 - 영어는 반드시 한글 단어로 대체하여 작성하고 신조어는 사용하지 말아주세요.
                 - 학생의 점수와 평가는 입력하지 마세요.
+            - '{original_prompt}'의 내용에 존재하지 않는 정보는 절대 추가하지 마세요.
         """
 
         # 원본 바이트 수 계산
