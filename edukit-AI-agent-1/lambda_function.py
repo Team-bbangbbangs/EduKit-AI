@@ -33,7 +33,7 @@ def lambda_handler(event, context):
             request_prompt = message_body['requestPrompt']
             byte_count = message_body['byteCount']
             target_bytes = byte_count   
-            min_bytes = byte_count - 100
+            min_bytes = byte_count - 500
 
             version = message_body['version']
             draft_content = message_body['draftContent']

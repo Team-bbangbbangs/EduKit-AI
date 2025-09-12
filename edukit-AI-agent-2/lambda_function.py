@@ -34,6 +34,7 @@ def lambda_handler(event, context):
             byte_count = message_body['byte_count']
             target_bytes = byte_count   
             min_bytes = byte_count - 100
+            max_bytes = byte_count + 100
 
             version = message_body['version']
             draft_content = message_body['draft_content']
@@ -53,8 +54,8 @@ def lambda_handler(event, context):
             final_content = review_student_record(
                 request_prompt=request_prompt,
                 draft_content=draft_content,
-                target_bytes=target_bytes,
-                min_bytes=min_bytes
+                min_bytes=min_bytes,
+                max_bytes=max_bytes
             )
             
             print(f"Successfully reviewed draft. Byte count: {len(final_content.encode('utf-8'))}/{target_bytes}")
@@ -79,12 +80,12 @@ def lambda_handler(event, context):
         print(f"Error processing messages: {str(e)}")
         return {'statusCode': 500, 'body': json.dumps(f'Error: {str(e)}')}
 
-def review_student_record(request_prompt: str, draft_content: str, target_bytes: int, min_bytes: int) -> str:
+def review_student_record(request_prompt: str, draft_content: str, min_bytes: int, max_bytes: int) -> str:
     """
     학생 생활기록부 초안을 스타일 가이드에 맞춰 최종 검토하는 함수
     """
     try:
-        prompt = create_review_prompt(request_prompt, draft_content, target_bytes, min_bytes)
+        prompt = create_review_prompt(request_prompt, draft_content, min_bytes, max_bytes)
         
         # OpenAI 라이브러리를 사용한 API 호출
         response = client.chat.completions.create(
@@ -115,17 +116,17 @@ def review_student_record(request_prompt: str, draft_content: str, target_bytes:
         print(f"An unexpected error occurred: {str(e)}")
         return draft_content
 
-def create_review_prompt(original_prompt: str, draft_content: str, target_bytes: int, min_bytes: int) -> str:
+def create_review_prompt(original_prompt: str, draft_content: str, min_bytes: int, max_bytes: int) -> str:
     """학생 생활기록부 검토 프롬프트를 생성합니다."""
     prompt = f"""
     다음은 학생 생활기록부 원고야. 아래 '스타일 가이드'에 맞춰 최종본을 완성해 줘.
 
     ## 스타일 가이드
 
-    목표 분량: 각 버전은 UTF-8 인코딩 기준 {target_bytes}Byte (최소 {min_bytes}byte 이상)로 반드시 맞춰 줘. 맞출 때까지 계속 다듬어 줘.
+    목표 분량: 각 버전은 UTF-8 인코딩 기준 최대 {max_bytes}Byte (최소 {min_bytes}byte 이상)로 반드시 맞춰 줘. 맞출 때까지 계속 다듬어 줘.
     문체: 모든 문장은 '~함.' 또는 '~임.'으로 끝나는 현재형 음슴체로 변경하고, 문장 끝에 온점을 붙여 줘.
     구두점: 쉼표(,)는 사용하지 말고, 의미가 명확하도록 문장을 다듬어 줘.
-    표현: '학생은', '학생이' 같은 표현은 사용하지 마.
+    표현: '학생은', '학생이' 같은 표현은 사용하지 마. ~것임 과 같은 추측성 표현도 사용하지 마.
 
     ## 원고
 
